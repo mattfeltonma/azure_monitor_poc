@@ -1,0 +1,136 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Create IAM Group and Policy for AWS Access Key Reporter"
+Parameters:
+  LambdaBucketName:
+    Type: String
+    Description: 'The S3 bucket where the Lambda code is stored'
+  LambdaCodeFileName:
+    Type: String
+    Description: 'Name of file containing Lambda code (must be .zip)'
+  AzureMonitorWorkspaceId:
+    Type: String
+    Description: 'Log Analytics Workspace ID where logs will be delivered'
+  AzureMonitorWorkspaceKey:
+    Type: String
+    Description: 'Log Analytics Workspace Key where logs will be delivered'
+  AccessKeyLogName:
+    Type: String
+    Description: 'The name of the log that will be created in Log Analytics Workspace'
+    Default: 'AWS_Access_Key_Report'
+    
+Resources:
+
+  ## Create Lambda IAM Role
+
+  LambdaIAMRole:  
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          -
+            Effect: "Allow"
+            Principal:
+              Service:
+                - "lambda.amazonaws.com"
+            Action:
+              - "sts:AssumeRole"
+      Path: "/"
+      ManagedPolicyArns:
+        - "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+      RoleName: Custom-Lambda-AzureMonitorPOC
+
+  # Create KMS CMK
+
+  LambdaKMSCMK:
+    Type: AWS::KMS::Key
+    Properties:
+      Description: "CMK used to protect Lambda's environment variables"
+      Enabled: True
+      EnableKeyRotation: true
+      KeyPolicy:
+        Version: "2012-10-17"
+        Id: "key-default-1"
+        Statement:
+          -
+            Sid: "Enable IAM Policy to Control Usage of Key"
+            Effect: "Allow"
+            Principal: 
+              AWS: !Join ['', ['arn:aws:iam::', !Ref 'AWS::AccountId', ':root']]
+            Action:
+              - "kms:*"
+            Resource: "*"
+          -
+            Sid: "Allow use of the key by Azure Monitor POC Lambda"
+            Effect: "Allow"
+            Principal:
+              AWS: !GetAtt 'LambdaIAMRole.Arn'
+            Action:
+              - "kms:Decrypt"
+            Resource: "*"
+
+  # Create KMS CMK Alias
+  LambdaKMSCMKAlias:
+    Type: AWS::KMS::Alias
+    Properties:
+      AliasName: "alias/azuremonitorpoc"
+      TargetKeyId: !Ref LambdaKMSCMK
+
+  # Create IAM Policy
+
+  AcceessReporterIAMPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: 'Custom-Lambda-AzureMonitorPOC-Policy'
+      Description: 'This policy grants the Lambda appropriate access to IAM and KMS CMK'
+      Path: "/"
+      Roles:
+        - !Ref LambdaIAMRole
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+            # Allow list users
+          -
+            Sid: "AllowListUsers"
+            Effect: "Allow"
+            Action:
+              - "iam:ListUsers"
+            Resource: "*"
+            
+            # Allow get information about access keys
+          -
+            Sid: "AllowAccessKeyReport"
+            Effect: "Allow"
+            Action:
+              - "iam:ListAccessKeys"
+              - "iam:GetAccessKeyLastUsed"
+            Resource: "arn:aws:iam::*:user/*"
+            
+            # Allow access to KMS Key
+          -
+            Sid: "AllowEncryptKMSKey"
+            Effect: "Allow"
+            Action:
+              - "kms:Decrypt"
+              - "kms:Encrypt"
+            Resource: !GetAtt 'LambdaKMSCMK.Arn'
+
+  # Create Lambda Function
+
+  CreateLambdaFunction:
+    Type: AWS::Lambda::Function
+    Properties:
+      Handler: 'lambda_function.lambda_handler'
+      Role: !GetAtt LambdaIAMRole.Arn
+      Code:
+        S3Bucket: !Ref LambdaBucketName
+        S3Key: !Ref LambdaCodeFileName
+      Runtime: 'python3.6'
+      KmsKeyArn: !GetAtt 'LambdaKMSCMK.Arn'
+      Environment:
+        Variables:
+          'WorkspaceId': !Ref AzureMonitorWorkspaceId
+          'WorkspaceKey': !Ref AzureMonitorWorkspaceKey
+          'LogName': !Ref AccessKeyLogName
+      FunctionName: "Custom-Lambda-Azure-Monitor-POC"
+      Timeout: 900
