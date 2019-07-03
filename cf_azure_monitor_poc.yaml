@@ -60,14 +60,6 @@ Resources:
             Action:
               - "kms:*"
             Resource: "*"
-          -
-            Sid: "Allow use of the key by Azure Monitor POC Lambda"
-            Effect: "Allow"
-            Principal:
-              AWS: !GetAtt 'LambdaIAMRole.Arn'
-            Action:
-              - "kms:Decrypt"
-            Resource: "*"
 
   # Create KMS CMK Alias
   LambdaKMSCMKAlias:
