@@ -1,5 +1,5 @@
-# Azure Monitor Proof of Concept with AWS
-This solution demonstrates how data and metrics collected from AWS can be delivered to a Log Analytics Workspace using Azure Monitor's HTTP Data Collector API.
+# Azure Monitor Proof of Concept with 3rd Party Cloud Provider
+This solution demonstrates how data and metrics collected from a third-party cloud provider can be delivered to a Log Analytics Workspace for analysis using Azure Monitor's HTTP Data Collector API.
 
 ## What problem does this solve?
 Organizations strive to achieve a single pane of glass for monitoring across cloud services.  Many of times this data is spread across cloud services making it challenging for operations to monitor the environment.  The Azure Monitor HTTP Data Collector API provides a mechanism to deliver data from 3rd party cloud services or on-premises services to an Azure Log Analytics Workspace.  Rich visualizations can then be created using Azure Monitor Log Analytics to achieve a single pane of glass view of an enterprise's environment.
