@@ -19,5 +19,5 @@ The solution uses an AWS Lambda to gather information about access key usage and
 * KMS:Decrypt and KMS:Encrypt for KMS key used to secure Lambda environment variables
 
 ## Setup
-The can be pushed using the provided CloudFormation template.  The code must be placed into a ZIP file and placed on an S3 bucket the user creating the CloudFormation stack.  The CloudFormation template requires the Workspace ID and Workspace Key from a Log Analytics Workspace in Azure.
+The can be pushed using the provided CloudFormation template.  The code must be placed into a ZIP file in  an S3 bucket the user creating the CloudFormation stack has permissions to.  The CloudFormation template requires the Workspace ID and Workspace Key from a Log Analytics Workspace in Azure.
 
