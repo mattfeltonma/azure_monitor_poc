@@ -11,13 +11,17 @@ The solution uses an AWS Lambda to gather information about access key usage and
 ### Python Runtime and Modules
 * [Python 3.6](https://www.python.org/downloads/release/python-360/)
 * [AWS Boto3](https://boto3.amazonaws.com/v1/documentation/api/latest/index.html?id=docs_gateway)
+** Boto3 - 1.9.188
+** Bootcore - 1.12.188
 
 ### AWS Permissions Requirement
 * IAM:ListUsers
-* IAM:ListAccessKeys
-* IAM:GetAccessKeyLastUsed
-* KMS:Decrypt and KMS:Encrypt for KMS key used to secure Lambda environment variables
+* IAM:ListGroups
+* IAM:ListRoles
+* IAM:GenerateServiceLastAccessedDetails
+* IAM:GetServiceLastAccessedDetails
 
 ## Setup
-The can be pushed using the provided CloudFormation template.  The code must be placed into a ZIP file in  an S3 bucket the user creating the CloudFormation stack has permissions to.  The CloudFormation template requires the Workspace ID and Workspace Key from a Log Analytics Workspace in Azure.
+Ensure the appropriate version of Boto3 and Botocore are installed. A sample parameters file is provided with the repository.
 
+python service_last_accessed.py --parameterfile parameters.json [--logfile]
